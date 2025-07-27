@@ -1,5 +1,5 @@
 server:
-  port: 8081
+  port: 8080
 hm:
   jwt:
     location: classpath:hmall.jks
@@ -12,11 +12,3 @@ hm:
       - /users/login
       - /items/**
       - /hi
-  db:
-    database: hm-item
-  swagger:
-    title: "黑马商城商品服务接口文档"
-    package: com.hmall.item.controller
-feign:
-  okhttp:
-    enabled: true
