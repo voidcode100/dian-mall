@@ -24,6 +24,7 @@ import java.util.List;
 public class ItemServiceImpl extends ServiceImpl<ItemMapper, Item> implements IItemService {
 
     @Override
+
     public void deductStock(List<OrderDetailDTO> items) {
         String sqlStatement = "com.hmall.item.mapper.ItemMapper.updateStock";
         boolean r = false;
