@@ -7,6 +7,7 @@ import com.hmall.api.client.TradeClient;
 import com.hmall.api.client.UserClient;
 import com.hmall.common.exception.BizIllegalException;
 import com.hmall.common.utils.BeanUtils;
+import com.hmall.common.utils.RabbitMqHelper;
 import com.hmall.common.utils.UserContext;
 import com.hmall.pay.domain.dto.PayApplyDTO;
 import com.hmall.pay.domain.dto.PayOrderFormDTO;
@@ -42,6 +43,8 @@ public class PayOrderServiceImpl extends ServiceImpl<PayOrderMapper, PayOrder> i
 
      private final RabbitTemplate rabbitTemplate;
 
+     private final RabbitMqHelper rabbitMqHelper;
+
     @Override
     public String applyPayOrder(PayApplyDTO applyDTO) {
         // 1.幂等性校验
@@ -76,7 +79,9 @@ public class PayOrderServiceImpl extends ServiceImpl<PayOrderMapper, PayOrder> i
         //tradeClient.markOrderPaySuccess(po.getBizOrderNo());
 
         try {
-            rabbitTemplate.convertAndSend("pay.direct","pay.success",po.getBizOrderNo());
+            //rabbitTemplate.convertAndSend("pay.direct","pay.success",po.getBizOrderNo());
+            rabbitMqHelper.sendMessageWithConfirm("pay.direct","pay.success",po.getPayOrderNo(),3);
+
         } catch (AmqpException e) {
             log.error("发送支付成功消息失败，订单号：{}", po.getBizOrderNo(), e);
         }

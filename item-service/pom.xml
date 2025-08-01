@@ -65,12 +65,12 @@
             <artifactId>seata-spring-boot-starter</artifactId>
             <version>2.0.0</version>
         </dependency>
-
-        <!--amqp-->
         <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-amqp</artifactId>
+            <groupId>org.elasticsearch.client</groupId>
+            <artifactId>elasticsearch-rest-high-level-client</artifactId>
         </dependency>
+
+
     </dependencies>
     <build>
         <finalName>${project.artifactId}</finalName>

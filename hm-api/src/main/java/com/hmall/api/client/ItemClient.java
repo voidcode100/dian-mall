@@ -1,7 +1,7 @@
 package com.hmall.api.client;
 
 
-import com.hmall.api.ItemClientFallBackFactory;
+import com.hmall.api.fallback.ItemClientFallBackFactory;
 import com.hmall.api.dto.ItemDTO;
 import com.hmall.api.dto.OrderDetailDTO;
 import org.springframework.cloud.openfeign.FeignClient;

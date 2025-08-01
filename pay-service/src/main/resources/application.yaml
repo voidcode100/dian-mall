@@ -20,4 +20,11 @@ hm:
 feign:
   okhttp:
     enabled: true
+spring:
+  rabbitmq:
+    template:
+      retry:
+        enabled: true
+    publisher-confirm-type: correlated
+    publisher-returns: true
 # keytool -genkeypair -alias hmall -keyalg RSA -keypass hmall123 -keystore hmall.jks -storepass hmall123

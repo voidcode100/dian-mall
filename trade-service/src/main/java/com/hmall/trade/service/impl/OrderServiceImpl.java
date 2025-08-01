@@ -1,11 +1,14 @@
 package com.hmall.trade.service.impl;
 
+import cn.hutool.core.bean.BeanUtil;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.hmall.api.client.CartClient;
 import com.hmall.api.client.ItemClient;
 import com.hmall.api.dto.ItemDTO;
 import com.hmall.api.dto.OrderDetailDTO;
+import com.hmall.common.constants.MqConstants;
 import com.hmall.common.exception.BadRequestException;
+import com.hmall.common.utils.RabbitMqHelper;
 import com.hmall.common.utils.UserContext;
 import com.hmall.trade.domain.dto.OrderFormDTO;
 import com.hmall.trade.domain.po.Order;
@@ -16,6 +19,7 @@ import com.hmall.trade.service.IOrderService;
 import io.seata.spring.annotation.GlobalTransactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -42,6 +46,9 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements
     private final ItemClient itemClient;
     private final IOrderDetailService detailService;
     private final CartClient cartClient;
+    private final RabbitTemplate rabbitTemplate;
+
+    private final RabbitMqHelper rabbitMqHelper;
 
     @Override
     @GlobalTransactional
@@ -85,6 +92,14 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements
         } catch (Exception e) {
             throw new RuntimeException("库存不足！",e);
         }
+
+        //发送延迟消息
+//        rabbitTemplate.convertAndSend(MqConstants.DELAY_EXCHANGE_NAME,MqConstants.DELAY_ORDER_KEY,order.getId(),
+//                message ->{
+//                    message.getMessageProperties().setDelay(10000);
+//                    return message;
+//                } );
+        rabbitMqHelper.sendDelayMessage(MqConstants.DELAY_EXCHANGE_NAME,MqConstants.DELAY_ORDER_KEY,order.getId(),10000);
         return order.getId();
     }
 
@@ -96,6 +111,28 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements
         order.setStatus(2);
         order.setPayTime(LocalDateTime.now());
         updateById(order);
+    }
+
+    @Override
+    public void cancelOrder(Long orderId) {
+        //标记订单为已关闭
+        lambdaUpdate()
+                .set(Order::getStatus,5)
+                .eq(Order::getId,orderId)
+                .update();
+        //恢复库存
+        //获取订单详情
+        List<OrderDetail> orderDetails = detailService.lambdaQuery().eq(OrderDetail::getOrderId, orderId).list();
+        orderDetails.forEach(orderDetail -> {
+            Integer num = orderDetail.getNum();
+            orderDetail.setNum(-num);
+        });
+        List<OrderDetailDTO> orderDetailDTOS = BeanUtil.copyToList(orderDetails, OrderDetailDTO.class);
+        if(orderDetailDTOS!=null||!orderDetailDTOS.isEmpty())
+        {
+            itemClient.deductStock(orderDetailDTOS);
+        }
+
     }
 
     private List<OrderDetail> buildDetails(Long orderId, List<ItemDTO> items, Map<Long, Integer> numMap) {
