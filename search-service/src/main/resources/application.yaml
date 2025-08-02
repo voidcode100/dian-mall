@@ -1,0 +1,22 @@
+server:
+  port: 8087
+hm:
+  jwt:
+    location: classpath:hmall.jks
+    alias: hmall
+    password: hmall123
+    tokenTTL: 30m
+  auth:
+    excludePaths:
+      - /search/**
+      - /users/login
+      - /items/**
+      - /hi
+  db:
+    database: hm-item
+  swagger:
+    title: "黑马商城商品搜索服务接口文档"
+    package: com.hmall.search.controller
+feign:
+  okhttp:
+    enabled: true
